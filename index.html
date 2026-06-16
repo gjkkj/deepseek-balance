@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0f0f23">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DS余额">
+<title>DeepSeek 余额</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0f0f23;--bg2:#1a1a3e;--card:#1e1e45;--accent:#00d4aa;--accent-dim:rgba(0,212,170,0.12);--danger:#ff4757;--text:#f0f0f5;--text2:#8888aa;--text3:#555577;--border:#2a2a55}
+.light{--bg:#f0f2f8;--bg2:#fff;--card:#fff;--accent:#00a885;--accent-dim:rgba(0,168,133,0.08);--danger:#e84118;--text:#1a1a2e;--text2:#555577;--text3:#9999bb;--border:#ddddf0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;height:100dvh;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;background:var(--bg)}
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px calc(12px + env(safe-area-inset-top,0px));background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.header h1{font-size:20px;font-weight:700}
+.header-actions{display:flex;gap:8px}
+.icon-btn{width:40px;height:40px;border:none;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.icon-btn:active{transform:scale(.9)}
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.sheet-overlay.open{display:flex}
+.sheet{background:var(--bg2);width:100%;max-width:480px;max-height:75vh;border-radius:20px 20px 0 0;padding:0 20px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-header{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg2)}
+.sheet-header h2{font-size:18px}
+.sheet-body{padding:16px 0}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px}
+.input-wrap{display:flex;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.input-wrap:focus-within{border-color:var(--accent)}
+.input-wrap input{flex:1;padding:14px 16px;border:none;background:transparent;color:var(--text);font-size:14px;font-family:monospace;outline:none}
+.input-wrap input::placeholder{color:var(--text3)}
+.input-wrap .eye{padding:0 14px;border:none;background:transparent;font-size:18px;cursor:pointer;color:var(--text2)}
+.form-hint{font-size:11px;color:var(--text3);margin-top:6px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;width:100%;-webkit-user-select:none}
+.btn:active{transform:scale(.97)}.btn:disabled{opacity:.5;transform:none}
+.btn-primary{padding:14px;background:var(--accent);color:var(--bg);font-size:15px;margin-bottom:12px}
+.btn-accent{padding:16px;font-size:17px;background:linear-gradient(135deg,var(--accent),#00b894);color:#fff;box-shadow:0 4px 15px rgba(0,212,170,.3);margin-bottom:12px}
+.btn-danger{padding:12px;background:transparent;color:var(--danger);border:1px solid var(--danger);font-size:13px}
+.main{flex:1;overflow-y:auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.main::-webkit-scrollbar{width:0}
+.balance-card{background:var(--card);border-radius:24px;padding:24px 20px 20px;margin-bottom:12px;box-shadow:0 4px 30px rgba(0,0,0,.3);animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.balance-top{display:flex;justify-content:space-between;margin-bottom:12px}
+.balance-top .label{font-size:13px;font-weight:600;color:var(--text2)}
+.balance-top .status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.idle{background:var(--text3)}.dot.busy{background:var(--warning);animation:pulse 1s infinite}
+.dot.ok{background:var(--accent)}.dot.err{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.amount-wrap{display:flex;align-items:baseline;justify-content:center;gap:4px;margin:8px 0 16px}
+.amount-cur{font-size:22px;font-weight:600;color:var(--text2)}
+.amount-num{font-size:56px;font-weight:800;color:var(--accent);letter-spacing:-2px;line-height:1;font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:12px 0 8px}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),#00ffcc);border-radius:3px;transition:width .8s;width:0%}
+.account-row{text-align:center;margin-top:4px;font-size:13px}
+.account-row .ok{color:var(--accent)}.account-row .err{color:var(--danger)}
+.detail-card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;animation:fadeIn .5s ease}
+.detail-title{display:flex;justify-content:space-between;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--text2)}
+.detail-time{font-size:11px;font-weight:400;color:var(--text3)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.detail-item{background:var(--accent-dim);border-radius:12px;padding:12px}
+.detail-item .l{display:block;font-size:11px;color:var(--text2);margin-bottom:4px}
+.detail-item .v{display:block;font-size:15px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.footer{padding:12px 0;text-align:center;font-size:12px;color:var(--text3)}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--text);padding:12px 24px;border-radius:14px;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.3);border:1px solid var(--border);z-index:200;opacity:0;transition:.3s;pointer-events:none;text-align:center;white-space:nowrap}
+.toast.show{opacity:1}.toast.err{border-color:var(--danger);color:var(--danger)}.toast.ok{border-color:var(--accent);color:var(--accent)}
+@media(max-width:380px){.amount-num{font-size:42px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header class="header"><h1>💰 DS 余额</h1><div class="header-actions"><button class="icon-btn" id="themeBtn" onclick="toggleTheme()">🌙</button><button class="icon-btn" onclick="showSheet()">⚙️</button></div></header>
+<div class="sheet-overlay" id="sheet"><div class="sheet"><div class="sheet-header"><h2>⚙️ 设置</h2><button class="icon-btn" onclick="hideSheet()">✕</button></div><div class="sheet-body"><div class="form-group"><label class="form-label">DeepSeek API Key</label><div class="input-wrap"><input type="password" id="keyInput" placeholder="sk-..." autocomplete="off"><button class="eye" onclick="toggleKeyVis()">👁️</button></div><p class="form-hint">Key 仅保存在你手机本地，不经过任何服务器</p></div><button class="btn btn-primary" onclick="saveKey()">💾 保存并查询</button><div style="height:1px;background:var(--border);margin:16px 0"></div><div class="form-group"><label class="form-label">自动刷新</label><div class="toggle-row"><span style="font-size:14px;color:var(--text)" id="autoLabel">已开启</span><label class="toggle-switch"><input type="checkbox" id="autoToggle" checked onchange="toggleAuto()"><span class="toggle-slider"></span></label></div></div><div class="form-group"><label class="form-label">刷新间隔</label><div class="interval-group"><div class="interval-btn" data-v="15">15秒</div><div class="interval-btn active" data-v="30">30秒</div><div class="interval-btn" data-v="60">1分</div><div class="interval-btn" data-v="300">5分</div></div></div><button class="btn btn-danger" onclick="clearKey()">🗑️ 清除 Key</button></div></div></div>
+<div class="main">
+<div class="balance-card"><div class="balance-top"><span class="label">账户余额</span><span class="status"><span class="dot idle" id="dot"></span><span id="statusText">等待查询</span></span></div>
+<div class="amount-wrap"><span class="amount-cur" id="cur">¥</span><span class="amount-num" id="amount">--.--</span></div>
+<div class="bar"><div class="bar-fill" id="barFill"></div></div>
+<div class="account-row" id="accountStatus"><span style="color:var(--text3)">● 输入 Key 后查询</span></div></div>
+<button class="btn btn-accent" id="refreshBtn" onclick="refresh()"><span>🔄</span> <span id="refreshText">查询余额</span></button>
+<div class="detail-card"><div class="detail-title"><span>📋 余额明细</span><span class="detail-time" id="timeText">--:--:--</span></div>
+<div class="detail-grid"><div class="detail-item"><span class="l">总余额</span><span class="v" id="dTotal">--</span></div>
+<div class="detail-item"><span class="l">充值余额</span><span class="v" id="dTopup">--</span></div>
+<div class="detail-item"><span class="l">赠送余额</span><span class="v" id="dGrant">--</span></div>
+<div class="detail-item"><span class="l">今日已用</span><span class="v" id="dUsed">暂无数据</span></div></div></div>
+<div class="footer" id="footer">输入 API Key 后点击查询</div>
+</div></div>
+<div class="toast" id="toast"></div>
+<script>
+// 状态
+var S={key:localStorage.getItem('k')||'',int:parseInt(localStorage.getItem('i'))||30,auto:localStorage.getItem('a')!=='0',th:localStorage.getItem('t')||'dark',timer:null,busy:false}
+var $=function(id){return document.getElementById(id)}
+var D={am:$('amount'),cu:$('cur'),bf:$('barFill'),dt:$('dot'),st:$('statusText'),as:$('accountStatus'),tt:$('timeText'),rb:$('refreshBtn'),rt:$('refreshText'),dtl:$('dTotal'),dtp:$('dTopup'),dg:$('dGrant'),du:$('dUsed'),ft:$('footer'),ts:$('toast'),sh:$('sheet'),ki:$('keyInput'),at:$('autoToggle'),al:$('autoLabel'),tb:$('themeBtn')}
+function applyTheme(t){document.body.classList.toggle('light',t==='light');D.tb.textContent=t==='light'?'☀️':'🌙';document.querySelector('meta[name="theme-color"]').content=t==='light'?'#ffffff':'#0f0f23';localStorage.setItem('t',t);S.th=t}
+function toggleTheme(){applyTheme(S.th==='dark'?'light':'dark')}
+function showSheet(){D.sh.classList.add('open');D.ki.value=S.key}
+function hideSheet(){D.sh.classList.remove('open')}
+D.sh.addEventListener('click',function(e){if(e.target===D.sh)hideSheet()})
+function toggleKeyVis(){var i=D.ki;i.type=i.type==='password'?'text':'password'}
+function saveKey(){var k=D.ki.value.trim();if(!k)return toast('请输入 API Key','err');if(!k.startsWith('sk-')&&!confirm('Key 通常以 sk- 开头，确定保存吗？'))return;S.key=k;localStorage.setItem('k',k);toast('Key 已保存','ok');hideSheet();if(S.key)refresh();startAuto()}
+function clearKey(){if(!confirm('清除已保存的 Key？'))return;S.key='';localStorage.removeItem('k');D.ki.value='';toast('Key 已清除');hideSheet();resetDisplay()}
+function toggleAuto(){S.auto=D.at.checked;D.al.textContent=S.auto?'已开启':'已关闭';localStorage.setItem('a',S.auto?'1':'0');S.auto?startAuto():stopAuto()}
+var ib=document.querySelectorAll('.interval-btn');for(var i=0;i<ib.length;i++){ib[i].addEventListener('click',function(){var bs=document.querySelectorAll('.interval-btn');for(var j=0;j<bs.length;j++)bs[j].classList.remove('active');this.classList.add('active');S.int=parseInt(this.dataset.v);localStorage.setItem('i',S.int);if(S.auto)startAuto()})}
+function startAuto(){stopAuto();if(!S.auto||!S.key)return;S.timer=setInterval(function(){if(!S.busy)refresh()},S.int*1000)}
+function stopAuto(){if(S.timer){clearInterval(S.timer);S.timer=null}}
+async function refresh(){if(S.busy)return;if(!S.key){toast('请先配置 API Key','err');showSheet();return}
+S.busy=true;D.rb.disabled=true;D.rt.textContent='查询中...';D.dt.className='dot busy';D.st.textContent='查询中...'
+try{var r=await fetch('https://api.deepseek.com/user/balance',{headers:{Authorization:'Bearer '+S.key,Accept:'application/json'}})
+if(!r.ok){if(r.status===401)throw new Error('API Key 无效');throw new Error('HTTP '+r.status)}
+var d=await r.json()
+var infos=d.balance_infos||[];var info=infos[0]||{}
+var total=parseFloat(info.total_balance||d.balance||0);var grant=parseFloat(info.granted_balance||0);var topup=parseFloat(info.topped_up_balance||0);var avail=d.is_available!==false
+animateNum(D.am,total,2);D.cu.textContent='¥';var pct=Math.min(total/100*100,100);D.bf.style.width=pct+'%'
+D.dt.className='dot '+(avail?'ok':'err');D.st.textContent=avail?'正常':'异常';D.as.innerHTML=avail?'<span class="ok">● 账户正常</span>':'<span class="err">● 账户异常</span>'
+D.tt.textContent=new Date().toLocaleTimeString('zh-CN',{hour12:false})
+D.dtl.textContent='¥ '+total.toFixed(4);D.dtp.textContent=topup>0?'¥ '+topup.toFixed(2):'¥ 0.00';D.dg.textContent=grant>0?'¥ '+grant.toFixed(2):'¥ 0.00'
+D.ft.textContent='✅ '+new Date().toLocaleString('zh-CN')+' | 自动刷新'+(S.auto?' ✓':' ✗');toast('已更新','ok')
+}catch(e){D.st.textContent='失败';D.dt.className='dot err';D.ft.textContent='错误: '+e.message;toast(e.message,'err')
+}finally{S.busy=false;D.rb.disabled=false;D.rt.textContent='查询余额'}}
+function animateNum(el,target,dec){var c=parseFloat(el.textContent.replace(/[^0-9.-]/g,''))||0,d=target-c,du=600,s=performance.now()
+function u(n){var p=Math.min((n-s)/du,1),e=p===1?1:1-Math.pow(2,-10*p);el.textContent=(c+d*e).toFixed(dec);if(p<1)requestAnimationFrame(u)}requestAnimationFrame(u)}
+function resetDisplay(){D.am.textContent='--.--';D.bf.style.width='0%';D.dt.className='dot idle';D.st.textContent='等待查询';D.as.innerHTML='<span style="color:var(--text3)">● 等待配置</span>';D.tt.textContent='--:--:--';D.dtl.textContent='--';D.dtp.textContent='--';D.dg.textContent='--';D.du.textContent='暂无数据';D.ft.textContent='输入 API Key 后点击查询'}
+function toast(msg,type){var t=D.ts;t.textContent=msg;t.className='toast'+(type?' '+type:'');void t.offsetWidth;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove('show')},2500)}
+applyTheme(S.th);D.at.checked=S.auto;D.al.textContent=S.auto?'已开启':'已关闭'
+var ib2=document.querySelectorAll('.interval-btn');for(var k=0;k<ib2.length;k++){if(parseInt(ib2[k].dataset.v)===S.int)ib2[k].classList.add('active')}
+if(S.key){D.ft.textContent='Key 已配置，查询中...';setTimeout(refresh,500);startAuto()}
+</script>
+</body>
+</html>
