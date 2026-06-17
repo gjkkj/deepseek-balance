@@ -15,7 +15,8 @@ android.api = 33
 android.minapi = 24
 android.sdk = 33
 android.ndk = 25b
-android.arch = arm64-v8a
+android.arch = arm64-v8a,armeabi-v7a
+android.logcat_filters = *:S python:D
 
 # 图标
 icon = icon.png
