@@ -14,7 +14,7 @@ jobs:
       - name: Build APK
         run: |
           cd android_app
-          echo y | docker run -i --rm -v $PWD:/app kivy/buildozer:latest android debug
+          docker run --rm -v $PWD:/app -w /app -e BUILDOZER_ALLOW_ROOT=1 kivy/buildozer:latest android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
